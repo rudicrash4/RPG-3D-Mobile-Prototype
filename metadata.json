@@ -1,0 +1,8 @@
+{
+  "name": "RPG 3D Mobile Prototype",
+  "description": "Prototype game RPG 3D berbasis HTML5 dan Three.js dengan kontrol third-person, kamera 360°, jump physics, dan mobile virtual joystick.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

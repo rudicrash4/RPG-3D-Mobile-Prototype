@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>RPG 3D Mobile Prototype</title>
+    <meta
+      name="description"
+      content="Prototype game RPG 3D berbasis HTML5 dan Three.js dengan kontrol third-person, kamera 360°, jump physics, dan mobile virtual joystick."
+    />
+    <meta property="og:title" content="RPG 3D Mobile Prototype" />
+    <meta
+      property="og:description"
+      content="Prototype game RPG 3D berbasis HTML5 dan Three.js dengan kontrol third-person, kamera 360°, jump physics, dan mobile virtual joystick."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Mobile Web App & Fullscreen Meta -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#FFFFFF" />
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/style.css" />
+
+    <!-- Three.js ES Modules CDN Import Map -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Main Game Script Entry Point -->
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
