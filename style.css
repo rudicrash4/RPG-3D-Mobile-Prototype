@@ -119,7 +119,7 @@ html, body {
   width: 100%;
   height: 100%;
   z-index: 100;
-  background-color: rgba(15, 23, 42, 0.90);
+  background-color: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(8px);
   display: none;
   align-items: center;
@@ -135,7 +135,7 @@ html, body {
   align-items: center;
   gap: 16px;
   color: #FFFFFF;
-  max-width: 320px;
+  max-width: 300px;
 }
 
 .rotate-icon {
@@ -155,33 +155,35 @@ html, body {
 }
 
 .portrait-text {
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: #FFFFFF;
 }
 
 .portrait-subtext {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #94A3B8;
   line-height: 1.45;
 }
 
-.portrait-play-btn {
-  margin-top: 10px;
-  background: #2563EB;
-  color: #FFFFFF;
-  font-size: 0.95rem;
-  font-weight: 600;
-  padding: 12px 28px;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
-  transition: transform 0.1s ease, background 0.15s ease;
+/* Orientation media queries */
+@media screen and (orientation: portrait) {
+  #portrait-overlay {
+    display: flex;
+  }
+  #joystick-container,
+  #jump-button {
+    display: none;
+  }
 }
 
-.portrait-play-btn:active {
-  transform: scale(0.94);
-  background: #1D4ED8;
+@media screen and (orientation: landscape) {
+  #portrait-overlay {
+    display: none;
+  }
+  #joystick-container,
+  #jump-button {
+    display: block;
+  }
 }

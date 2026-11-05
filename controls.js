@@ -5,7 +5,8 @@
  * 2. Jump button touch and visual feedback (independent pointerId)
  * 3. Camera drag & 360-degree orbit swipe (independent pointerId)
  * 4. Full multi-touch concurrency (move + camera + jump simultaneously)
- * 5. Keyboard & mouse fallback for testing and desktop
+ * 5. Configurable sensitivity variables (cameraSensitivity, cameraPitchSensitivity, cameraInvertY)
+ * 6. Keyboard & mouse fallback for testing and desktop
  */
 
 export class MobileControls {
@@ -36,10 +37,12 @@ export class MobileControls {
     this.joystickCenterY = 0;
     this.maxJoystickRadius = 46; // Max knob displacement in px
 
-    // Camera drag tracking
+    // Camera drag tracking & Configurable Sensitivity Variables
     this.lastCameraX = 0;
     this.lastCameraY = 0;
-    this.cameraSensitivity = 0.0055;
+    this.cameraSensitivity = 0.005; // Configurable horizontal sensitivity
+    this.cameraPitchSensitivity = 0.004; // Configurable vertical sensitivity
+    this.cameraInvertY = false; // Invert vertical swipe direction
 
     // Keyboard state fallback
     this.keys = {
@@ -56,7 +59,7 @@ export class MobileControls {
   }
 
   /**
-   * Initializes virtual joystick touch handling.
+   * Initializes virtual joystick touch handling with isolated pointer capture.
    */
   _initJoystick() {
     const el = this.ui.joystickContainer;
@@ -97,16 +100,24 @@ export class MobileControls {
         el.releasePointerCapture(e.pointerId);
       } catch (_) {}
 
-      this.joystickPointerId = null;
-      this.inputVector.x = 0;
-      this.inputVector.y = 0;
-      this.ui.setKnobPosition(0, 0, false);
+      this._resetJoystick();
     };
 
     el.addEventListener('pointerdown', handlePointerDown);
     el.addEventListener('pointermove', handlePointerMove);
     el.addEventListener('pointerup', handlePointerEnd);
     el.addEventListener('pointercancel', handlePointerEnd);
+    el.addEventListener('lostpointercapture', () => this._resetJoystick());
+  }
+
+  /**
+   * Resets virtual joystick state.
+   */
+  _resetJoystick() {
+    this.joystickPointerId = null;
+    this.inputVector.x = 0;
+    this.inputVector.y = 0;
+    this.ui.setKnobPosition(0, 0, false);
   }
 
   /**
@@ -127,7 +138,7 @@ export class MobileControls {
     }
 
     // Normalized components (-1 to 1)
-    // Invert Y so up on screen is positive forward
+    // Invert Y so upward on screen is positive forward
     this.inputVector.x = clampedDx / this.maxJoystickRadius;
     this.inputVector.y = -clampedDy / this.maxJoystickRadius;
 
@@ -135,7 +146,7 @@ export class MobileControls {
   }
 
   /**
-   * Initializes jump button touch handling.
+   * Initializes jump button touch handling with isolated pointer capture.
    */
   _initJumpButton() {
     const btn = this.ui.jumpButton;
@@ -174,6 +185,10 @@ export class MobileControls {
     btn.addEventListener('pointerdown', handleDown);
     btn.addEventListener('pointerup', handleEnd);
     btn.addEventListener('pointercancel', handleEnd);
+    btn.addEventListener('lostpointercapture', () => {
+      this.jumpPointerId = null;
+      this.ui.setJumpActive(false);
+    });
   }
 
   /**
@@ -181,7 +196,12 @@ export class MobileControls {
    */
   _initCameraTouch() {
     const handlePointerDown = (e) => {
-      // Ignore if touched inside joystick, jump button, or portrait overlay
+      // Do not capture pointer if it belongs to joystick or jump button
+      if (e.pointerId === this.joystickPointerId || e.pointerId === this.jumpPointerId) {
+        return;
+      }
+
+      // Ignore if touched inside joystick, jump button, or visible portrait overlay
       if (
         (this.ui.joystickContainer && this.ui.joystickContainer.contains(e.target)) ||
         (this.ui.jumpButton && this.ui.jumpButton.contains(e.target)) ||
@@ -210,7 +230,7 @@ export class MobileControls {
       if (typeof this.onCameraRotate === 'function') {
         // Dragging left turns camera left (yaw); dragging down rotates pitch down
         const deltaYaw = -deltaX * this.cameraSensitivity;
-        const deltaPitch = -deltaY * this.cameraSensitivity;
+        const deltaPitch = (this.cameraInvertY ? deltaY : -deltaY) * this.cameraPitchSensitivity;
         this.onCameraRotate(deltaYaw, deltaPitch);
       }
     };
@@ -279,11 +299,22 @@ export class MobileControls {
     });
 
     window.addEventListener('blur', () => {
-      this.keys.forward = false;
-      this.keys.backward = false;
-      this.keys.left = false;
-      this.keys.right = false;
+      this.resetAll();
     });
+  }
+
+  /**
+   * Cleans up all active touch and keyboard states.
+   */
+  resetAll() {
+    this._resetJoystick();
+    this.jumpPointerId = null;
+    this.cameraPointerId = null;
+    this.ui.setJumpActive(false);
+    this.keys.forward = false;
+    this.keys.backward = false;
+    this.keys.left = false;
+    this.keys.right = false;
   }
 
   /**

@@ -1,89 +1,100 @@
-# RPG 3D Mobile Prototype
+# RPG-3D-Mobile-Prototype-Fixed
 
-Prototype game RPG 3D berbasis HTML5, CSS3, JavaScript ES Modules murni, dan Three.js yang dirancang khusus untuk browser smartphone (Android & iOS) dan desktop.
+Prototype game RPG 3D berbasis HTML5, CSS3, JavaScript ES Modules, dan Three.js yang dirancang khusus untuk smartphone Android/iOS dan mendukung deployment statis langsung di **GitHub Pages** (termasuk repository subpath).
 
 ---
 
 ## 📁 Struktur File Modular
 
-Proyek ini dibangun secara modular menggunakan JavaScript ES Modules (`import`/`export`) tanpa file monolitik:
+Proyek ini dibangun dengan struktur modular terpisah:
 
 ```
-RPG-3D-Mobile-Prototype/
-├── index.html           # Struktur HTML, mobile viewport, CDN import map Three.js
-├── style.css            # Styling fullscreen, landscape layout, touch constraints
-├── main.js              # Entry point aplikasi & 60 FPS delta-time game loop
-├── world.js             # Scene Three.js, pencahayaan 3-titik terang, fog, renderer
-├── floor.js             # Lantai 3D 140x140 dengan CanvasTexture checkerboard tajam (Y=0)
-├── player.js            # Karakter Cube biru, panah 3D, interpolasi rotasi, jump physics
-├── camera.js            # Third-person camera, follow smooth, orbit 360°, pitch clamp
-├── controls.js          # Virtual joystick, jump button, camera touch, multitouch isolated
-├── ui.js                # Minimalist inline SVG UI (joystick, jump, portrait overlay)
-├── utils.js             # Helper functions: clamp, lerp, lerpAngle, damp, scratch vectors
-└── README.md            # Dokumentasi lengkap sistem dan instruksi instalasi
+RPG-3D-Mobile-Prototype-Fixed/
+├── index.html                   # Entry point HTML dengan path relatif (./) & import map Three.js
+├── style.css                    # Fullscreen 100dvh, layout landscape, touch-action none
+├── main.js                      # Entry point JavaScript & 60 FPS requestAnimationFrame game loop
+├── world.js                     # Scene Three.js, lighting rig, background putih, horizon fog
+├── floor.js                     # Lantai 3D 140×140 (Y = 0) dengan checkerboard tajam & pilar penanda
+├── player.js                    # Karakter Cube biru, panah 3D, rotasi terpendek, jump physics
+├── camera.js                    # Kamera third-person 360°, pitch clamp, exponential damping follow
+├── controls.js                  # Multi-touch pointer tracking (joystick, jump, camera orbit independen)
+├── ui.js                        # UI minimalis inline SVG (joystick, jump, portrait warning overlay)
+├── utils.js                     # Helper matematika (clamp, lerp, lerpAngle, damp, scratch Vector3)
+├── vite.config.ts               # Konfigurasi Vite dengan base: './' untuk GitHub Pages subpath
+├── package.json                 # Dependensi & skrip build
+├── tsconfig.json                # Konfigurasi TypeScript
+├── .nojekyll                    # Mencegah Jekyll mengabaikan asset pada GitHub Pages
+├── .github/workflows/deploy.yml # Workflow otomatis GitHub Actions untuk GitHub Pages
+└── README.md                    # Dokumentasi lengkap proyek
 ```
 
 ---
 
-## 🎮 Fitur & Mekanisme Utama
+## 🚀 Perbaikan Utama yang Telah Dilakukan
 
-### 1. Sistem Kontrol Third-Person
-* **Movement Relative to Camera**: Arah pergerakan karakter mengikuti orientasi horizontal kamera (bidang XZ). Mendorong joystick ke atas selalu menggerakkan karakter ke depan arah pandang kamera.
-* **Smooth Turning**: Rotasi karakter menggunakan interpolasi `lerpAngle` terpendek agar perputaran tubuh berjalan halus dan tidak menyentak saat berpindah arah.
-* **3D Directional Arrow**: Penanda arah 3D berwarna cyan terpasang di atas karakter dan selalu sinkron dengan arah hadap karakter.
+### 1. Hosting GitHub Pages & Asset Paths
+- **Path Relatif**: Mengubah seluruh pemanggilan asset pada `index.html` dari root absolut (`/style.css`, `/main.js`) menjadi path relatif (`./style.css`, `./main.js`).
+- **Vite Base Path**: Menambahkan `base: './'` pada `vite.config.ts` sehingga hasil kompilasi `dist/` dapat berjalan sempurna pada GitHub Pages dengan subpath repositori (`https://username.github.io/repo-name/`) maupun domain root.
+- **Bypass Jekyll**: Menambahkan berkas `.nojekyll` di root dan direktori `public/` agar file bundler Vite tidak diabaikan oleh engine GitHub Pages.
+- **Workflow Otomatis**: Menyediakan `.github/workflows/deploy.yml` siap pakai yang secara otomatis meng-build dan men-deploy branch `main` ke GitHub Pages menggunakan GitHub Actions resmi (`actions/deploy-pages@v4`).
 
-### 2. Third-Person Camera 360°
-* **Smooth Camera Follow**: Kamera mengikuti posisi target karakter secara dinamis menggunakan interpolasi lerp.
-* **Orbit 360° & Pitch Control**: Area layar selain tombol dapat di-swipe untuk memutar sudut yaw kamera 360° dan mengatur sudut pitch vertikal (dibatasi antara -14° hingga +60° untuk mencegah flipping dan tembus lantai).
+### 2. Peningkatan Sistem Kamera Third-Person (`camera.js`)
+- **Rotasi 360° Penuh**: Sudut yaw berputar bebas tanpa batasan derajat dengan normalisasi sudut terbungkus rapi tanpa snapping.
+- **Batas Pitch & Ground Clearance**: Pitch dibatasi antara `-8.6°` (melihat sedikit ke atas) hingga `+60°` (melihat ke bawah), dilengkapi penjaga ketinggian (`camY >= 0.45`) sehingga kamera tidak akan pernah tembus atau masuk ke dalam lantai.
+- **Exponential Damping Follow**: Mengikuti pergerakan pemain menggunakan rumus interpolasi `1 - Math.exp(-followSpeed * delta)` yang stabil dan konsisten di berbagai refresh rate layar (60Hz, 90Hz, 120Hz).
+- **Sensitivitas Terkonfigurasi**: Variabel `cameraSensitivity`, `cameraPitchSensitivity`, dan `cameraInvertY` tersedia dan dapat disesuaikan dengan mudah.
+- **Gerakan Relatif Kamera**: Arah maju joystick selalu mengikuti arah hadap kamera horizontal (bidang XZ). Saat kamera diputar 180°, karakter otomatis berjalan ke arah pandang kamera yang baru.
 
-### 3. Sistem Lompat (Jump Physics)
-* **Velocity & Gravitasi**: Dihitung berbasis delta time (`verticalVelocity += gravity * delta`), menjaga ketinggian dan durasi lompat konsisten di berbagai refresh rate layar (60Hz, 90Hz, 120Hz).
-* **Anti Double-Jump**: Karakter hanya dapat melompat saat menyentuh tanah (`isGrounded = true`). Tombol jump dinonaktifkan ketika berada di udara.
-* **Ground Detection**: Karakter tidak dapat menembus lantai (posisi Y terkunci tepat pada permukaan Y = 0).
+### 3. Sistem Gerak & Jump Physics (`player.js`)
+- **Rotasi Halus Karakter**: Menggunakan interpolasi sudut terpendek `lerpAngle` dengan exponential damping sehingga karakter berputar mulus tanpa hentakan mendadak.
+- **Fisika Lompat & Gravitasi**: Menggunakan `verticalVelocity`, `jumpForce = 9.8`, dan `gravity = -24.0` berbasis delta time (`delta <= 0.05`).
+- **Anti Double-Jump**: Karakter hanya dapat melompat saat menyentuh tanah (`isGrounded = true`). Tombol jump dinonaktifkan ketika berada di udara.
+- **Konsistensi Ground**: Lantai berada tepat pada posisi Y = 0; karakter dan bayangan mendarat tanpa getaran atau penetrasi lantai.
 
-### 4. Kontrol Sentuh Mobile (Multi-Touch)
-* **Pointer Events & Pointer ID**: Setiap sentuhan (Joystick, Kamera, Tombol Jump) dikelola dengan `pointerId` independen.
-* **Multi-touch Concurrency**: Pemain dapat menggerakkan joystick, menggeser kamera, dan menekan tombol lompat secara bersamaan tanpa saling mengganggu.
-* **Virtual Joystick**: Lingkaran luar + knob tengah dengan batasan radius dan auto-recenter yang halus saat jari dilepas.
-* **Desktop Fallback**: Mendukung kontrol keyboard (`WASD` / tombol panah untuk bergerak, `Space` untuk lompat, dan drag mouse untuk memutar kamera).
+### 4. Kontrol Mobile & Multi-Touch Concurrency (`controls.js`)
+- **Isolasi Pointer Events**: Masing-masing kontrol (Virtual Joystick, Kamera Swipe, dan Tombol Jump) melacak `pointerId` independen dengan `setPointerCapture` dan penanganan `lostpointercapture`.
+- **Dukungan Multi-Sentuhan Penuh**: Pemain dapat berjalan menggunakan joystick (kiri bawah) sambil memutar kamera (tengah/kanan) dan melompat (kanan bawah) secara bersamaan tanpa saling mengganggu.
+- **Pembersihan Event Menyeluruh**: Kontrol otomatis kembali ke titik tengah jika jari terlepas (`pointerup`), dibatalkan sistem HP (`pointercancel`), atau window kehilangan fokus (`blur`).
+- **Fallback Desktop**: Mendukung tombol keyboard `WASD` / panah untuk berjalan, `Space` untuk melompat, dan drag mouse untuk memutar kamera.
 
-### 5. UI Minimalis (Inline SVG)
-* Murni menggunakan inline SVG tanpa dependensi gambar PNG atau font eksternal.
-* Warna putih transparan minimalis (opacity 0.25 - 0.45) agar 85%+ layar tetap bersih untuk dunia 3D.
-* Tanpa elemen yang mengganggu (tidak ada health bar, minimap, logo, atau watermark).
-
-### 6. Mode Landscape & Fullscreen
-* Otomatis menampilkan overlay animasi "Putar ke mode Landscape" saat perangkat berada dalam posisi portrait.
-* Mendukung permintaan Screen Orientation API (`orientation.lock('landscape')`) dan Fullscreen API pada interaksi pertama pemain.
+### 5. UI Minimalis Murni Inline SVG (`ui.js` & `style.css`)
+- Hanya menampilkan **Virtual Joystick** di kiri bawah dan **Tombol Jump** di kanan bawah.
+- Desain visual kontras tinggi dengan lingkaran latar transparan gelap (`rgba(15, 23, 42, 0.45)`), garis tepi putih solid, dan drop shadow tebal agar terlihat jelas di atas lantai putih maupun abu-abu.
+- **Portrait Warning Overlay**: Saat HP berada pada orientasi portrait, otomatis menampilkan animasi ikon HP berputar dan teks "Putar ke mode Landscape", serta menyembunyikan joystick dan jump button sesuai spesifikasi. Saat diputar ke landscape, overlay langsung tertutup dan kontrol aktif.
 
 ---
 
-## 🚀 Cara Menjalankan
+## 🛠️ Cara Menjalankan & Membangun Proyek
 
-### Cara 1: Local Server Statis (Tanpa Instalasi Build Tool)
-Karena proyek ini menggunakan ES Modules murni dan CDN import map, Anda dapat langsung menjalankannya dengan web server lokal apapun:
-
-```bash
-# Menggunakan Node.js npx serve
-npx serve .
-
-# Atau menggunakan Python 3
-python3 -m http.server 3000
-```
-Buka browser di `http://localhost:3000`.
-
-### Cara 2: Vite Dev Server
+### 1. Development Lokal (Vite)
 ```bash
 npm install
 npm run dev
 ```
-Buka URL lokal yang ditampilkan (default port 3000).
+Akses di browser: `http://localhost:3000`
+
+### 2. Build untuk Produksi
+```bash
+npm run build
+```
+Hasil build siap hosting akan berada di folder `dist/`.
+
+### 3. Menjalankan Preview Hasil Build
+```bash
+npm run preview
+```
 
 ---
 
-## ⚙️ Variabel Fisika yang Mudah Dimodifikasi (`player.js`)
+## 🌐 Panduan Deployment ke GitHub Pages
 
-* `moveSpeed` (default: `8.0` units/sec) - Kecepatan jalan karakter.
-* `jumpForce` (default: `9.8` units/sec) - Gaya dorong awal saat melompat.
-* `gravity` (default: `-24.0` units/sec²) - Percepatan gravitasi ke bawah.
-* `rotationSpeed` (default: `14.0`) - Kecepatan interpolasi rotasi tubuh.
+### Opsi A: Menggunakan GitHub Actions (Otomatis - Direkomendasikan)
+1. Push repository ini ke GitHub (branch `main`).
+2. Masuk ke halaman repositori di GitHub: **Settings** > **Pages**.
+3. Pada bagian **Build and deployment** > **Source**, pilih **GitHub Actions**.
+4. GitHub Actions akan secara otomatis menjalankan workflow `.github/workflows/deploy.yml` dan mempublikasikan game ke URL `https://<username>.github.io/<repository-name>/`.
+
+### Opsi B: Menggunakan Branch `gh-pages` Manual
+1. Jalankan `npm run build`.
+2. Deploy isi folder `dist/` (termasuk file `dist/.nojekyll`) ke branch `gh-pages`.
+3. Pada menu **Settings** > **Pages**, pilih Source: **Deploy from a branch** > branch `gh-pages` / `root`.

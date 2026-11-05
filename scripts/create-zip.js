@@ -16,17 +16,22 @@ async function createProjectZip() {
     'controls.js',
     'ui.js',
     'utils.js',
+    'package.json',
+    'vite.config.ts',
+    'tsconfig.json',
+    '.nojekyll',
+    '.github/workflows/deploy.yml',
     'README.md',
   ];
 
-  for (const fileName of filesToInclude) {
-    const filePath = path.resolve(process.cwd(), fileName);
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf8');
-      zip.file(fileName, content);
-      console.log(`Added: ${fileName}`);
+  for (const relativePath of filesToInclude) {
+    const fullPath = path.resolve(process.cwd(), relativePath);
+    if (fs.existsSync(fullPath)) {
+      const content = fs.readFileSync(fullPath, 'utf8');
+      zip.file(relativePath, content);
+      console.log(`Added: ${relativePath}`);
     } else {
-      console.warn(`File not found: ${fileName}`);
+      console.warn(`File not found: ${relativePath}`);
     }
   }
 
@@ -36,9 +41,10 @@ async function createProjectZip() {
     compressionOptions: { level: 9 },
   });
 
-  const outputPath = path.resolve(process.cwd(), 'RPG-3D-Mobile-Prototype.zip');
+  const outputName = 'RPG-3D-Mobile-Prototype-Fixed.zip';
+  const outputPath = path.resolve(process.cwd(), outputName);
   fs.writeFileSync(outputPath, zipBuffer);
-  console.log(`Successfully generated: RPG-3D-Mobile-Prototype.zip (${zipBuffer.length} bytes)`);
+  console.log(`Successfully generated: ${outputName} (${zipBuffer.length} bytes)`);
 }
 
 createProjectZip().catch((err) => {

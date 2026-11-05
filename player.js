@@ -15,7 +15,7 @@ export class Player {
 
     // Movement configuration
     this.moveSpeed = 8.0; // Units per second
-    this.rotationSpeed = 14.0; // Interpolation factor for smooth turning
+    this.rotationSpeed = 15.0; // Exponential damping rate for smooth turning
 
     // Jump & Gravity configuration
     this.jumpForce = 9.8; // Initial vertical launch velocity
@@ -28,7 +28,7 @@ export class Player {
     this.halfHeight = this.size / 2; // 0.7 units
 
     // Rotation state (facing direction in radians)
-    this.facingAngle = 0;
+    this.facingAngle = 0.0;
 
     // Build 3D character hierarchy
     this.mesh = this._createPlayerMesh();
@@ -57,12 +57,12 @@ export class Player {
       metalness: 0.2,
     });
     const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-    cube.position.y = this.halfHeight; // Center at half height so bottom is at Y=0
+    cube.position.y = this.halfHeight; // Center at half height so bottom is flush at Y = 0
     cube.castShadow = true;
     cube.receiveShadow = false;
     group.add(cube);
 
-    // 2. Decorative Face Trim (Provides subtle high-end depth to the cube)
+    // 2. Decorative Face Trim (Provides depth to the front face)
     const visorGeo = new THREE.BoxGeometry(this.size * 0.75, 0.28, 0.08);
     const visorMat = new THREE.MeshStandardMaterial({
       color: 0x0F172A, // Deep navy visor
@@ -139,7 +139,7 @@ export class Player {
 
   /**
    * Triggers a jump if the character is grounded.
-   * Prevents multi-jumping while in mid-air.
+   * Strictly prevents multi-jumping while in mid-air.
    * @returns {boolean} Whether jump was successfully initiated.
    */
   jump() {
@@ -154,21 +154,22 @@ export class Player {
 
   /**
    * Updates player physics, position, rotation, and jumping.
-   * @param {number} delta Delta time in seconds
+   * @param {number} delta Delta time in seconds (clamped)
    * @param {THREE.Vector3} moveDirection World-space normalized movement vector
    */
   update(delta, moveDirection) {
     const isMoving = moveDirection.lengthSq() > 0.001;
 
-    // 1. Horizontal Movement
+    // 1. Horizontal Movement (Functions seamlessly both on ground and in air)
     if (isMoving) {
       this.mesh.position.x += moveDirection.x * this.moveSpeed * delta;
       this.mesh.position.z += moveDirection.z * this.moveSpeed * delta;
 
       // Target angle: standard Three.js facing (+Z forward)
       const targetAngle = Math.atan2(moveDirection.x, moveDirection.z);
-      // Smoothly interpolate rotation to prevent abrupt snapping
-      this.facingAngle = lerpAngle(this.facingAngle, targetAngle, Math.min(1.0, this.rotationSpeed * delta));
+      // Frame-rate independent exponential damping for smooth turning without snapping
+      const rotFactor = 1 - Math.exp(-this.rotationSpeed * delta);
+      this.facingAngle = lerpAngle(this.facingAngle, targetAngle, rotFactor);
       this.mesh.rotation.y = this.facingAngle;
     }
 

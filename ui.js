@@ -3,7 +3,7 @@
  * Creates high-contrast, minimalist, inline SVG touch controls:
  * 1. Virtual Joystick (bottom-left)
  * 2. Jump Button (bottom-right)
- * 3. Portrait orientation overlay with "Mainkan Sekarang" fallback
+ * 3. Portrait orientation overlay (shows rotating phone & "Putar ke mode Landscape" only)
  */
 
 /**
@@ -58,7 +58,7 @@ export function createUI() {
     </svg>
   `;
 
-  // 3. Portrait Orientation Warning Overlay (with Play Anyway button)
+  // 3. Portrait Orientation Warning Overlay (No extra buttons as strictly requested)
   const portraitOverlay = document.createElement('div');
   portraitOverlay.id = 'portrait-overlay';
   portraitOverlay.innerHTML = `
@@ -73,10 +73,7 @@ export function createUI() {
         <polygon points="56,92 50,102 62,106" fill="#38BDF8" />
       </svg>
       <div class="portrait-text">Putar ke mode Landscape</div>
-      <div class="portrait-subtext">Putar perangkat ke samping untuk tampilan optimal</div>
-      <button id="btn-portrait-play" class="portrait-play-btn" type="button">
-        Mainkan Sekarang
-      </button>
+      <div class="portrait-subtext">Putar smartphone Anda ke posisi mendatar untuk bermain</div>
     </div>
   `;
 
@@ -86,12 +83,9 @@ export function createUI() {
   document.body.appendChild(uiContainer);
 
   const knobElement = document.getElementById('joystick-knob');
-  const playAnywayBtn = document.getElementById('btn-portrait-play');
-
-  let userBypassedPortrait = false;
 
   const updateVisibility = (isPortrait) => {
-    if (isPortrait && !userBypassedPortrait) {
+    if (isPortrait) {
       portraitOverlay.style.display = 'flex';
       joystickContainer.style.display = 'none';
       jumpButton.style.display = 'none';
@@ -101,22 +95,6 @@ export function createUI() {
       jumpButton.style.display = 'block';
     }
   };
-
-  // Allow player to bypass overlay and play immediately in portrait
-  if (playAnywayBtn) {
-    playAnywayBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      userBypassedPortrait = true;
-      // Try orientation lock & fullscreen
-      if (screen.orientation && typeof screen.orientation.lock === 'function') {
-        screen.orientation.lock('landscape').catch(() => {});
-      }
-      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
-      updateVisibility(false);
-    });
-  }
 
   return {
     uiContainer,
@@ -151,6 +129,8 @@ export function createUI() {
     },
     /**
      * Controls visibility of the portrait overlay.
+     * When portrait: shows overlay, hides controls.
+     * When landscape: hides overlay, shows controls.
      * @param {boolean} isPortrait
      */
     setPortraitOverlayVisible: (isPortrait) => {
